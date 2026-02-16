@@ -1,0 +1,2111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <style>
+        /* --- reset and base --- */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-soft: rgba(79, 70, 229, 0.1);
+            --accent: #f43f5e;
+            --accent-soft: rgba(244, 63, 94, 0.1);
+            --teal: #06b6d4;
+            --teal-soft: rgba(6, 182, 212, 0.1);
+            --green: #10b981;
+            --green-soft: rgba(16, 185, 129, 0.1);
+            --amber: #f59e0b;
+            --amber-soft: rgba(245, 158, 11, 0.1);
+            --red: #ef4444;
+            --red-soft: rgba(239, 68, 68, 0.1);
+            --dark: #0f172a;
+            --sidebar-bg: #1e1b4b;
+            --sidebar-bg2: #312e81;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --text-lighter: #94a3b8;
+            --border: #e2e8f0;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --radius: 14px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+            --shadow-lg: 0 8px 30px rgba(0,0,0,0.12);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* --- auth background with floating bubbles --- */
+        .auth-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4f46e5 100%);
+            padding: 20px;
+        }
+
+        .auth-page .bubble {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.07;
+            background: white;
+        }
+        .auth-page .bubble:nth-child(1) { width: 400px; height: 400px; top: -100px; left: -80px; animation: bobble 18s ease-in-out infinite; }
+        .auth-page .bubble:nth-child(2) { width: 250px; height: 250px; bottom: -60px; right: -40px; animation: bobble 14s ease-in-out infinite reverse; }
+        .auth-page .bubble:nth-child(3) { width: 150px; height: 150px; top: 40%; left: 60%; animation: bobble 20s ease-in-out infinite 2s; }
+        .auth-page .bubble:nth-child(4) { width: 100px; height: 100px; top: 20%; right: 15%; animation: bobble 12s ease-in-out infinite 4s; }
+        .auth-page .bubble:nth-child(5) { width: 200px; height: 200px; bottom: 10%; left: 30%; animation: bobble 16s ease-in-out infinite 1s; }
+
+        @keyframes bobble {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(20px, -30px) scale(1.05); }
+            50% { transform: translate(-15px, 15px) scale(0.95); }
+            75% { transform: translate(10px, 25px) scale(1.02); }
+        }
+
+        .auth-card {
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 20px;
+            padding: 44px 38px;
+            width: 100%;
+            max-width: 430px;
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+            animation: cardSlide 0.5s ease-out;
+        }
+
+        @keyframes cardSlide {
+            from { opacity: 0; transform: translateY(25px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .auth-card .brand { text-align: center; margin-bottom: 28px; }
+        .auth-card .brand-icon { font-size: 42px; margin-bottom: 8px; }
+        .auth-card .brand h1 { font-size: 26px; color: var(--primary); font-weight: 800; }
+        .auth-card .brand p { color: var(--text-light); font-size: 14px; margin-top: 4px; }
+
+        /* --- forms --- */
+        .field { margin-bottom: 18px; }
+        .field label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px; color: var(--text); }
+        .field input, .field select, .field textarea {
+            width: 100%;
+            padding: 11px 14px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            color: var(--text);
+            background: var(--card);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .field input:focus, .field select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-soft);
+        }
+        .field select { cursor: pointer; }
+
+        /* --- buttons --- */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 11px 22px;
+            font-size: 14px;
+            font-weight: 650;
+            font-family: inherit;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            line-height: 1.4;
+        }
+        .btn:active { transform: scale(0.97); }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); box-shadow: 0 4px 14px rgba(79,70,229,0.35); }
+
+        .btn-green { background: var(--green); color: white; }
+        .btn-green:hover { background: #059669; box-shadow: 0 4px 14px rgba(16,185,129,0.35); }
+
+        .btn-red { background: var(--red); color: white; }
+        .btn-red:hover { background: #dc2626; }
+
+        .btn-rose { background: var(--accent); color: white; }
+        .btn-rose:hover { background: #e11d48; box-shadow: 0 4px 14px rgba(244,63,94,0.35); }
+
+        .btn-amber { background: var(--amber); color: #1e293b; }
+
+        .btn-ghost { background: var(--bg); color: var(--text); }
+        .btn-ghost:hover { background: var(--border); }
+
+        .btn-full { width: 100%; }
+        .btn-sm { padding: 7px 13px; font-size: 12px; border-radius: 8px; }
+
+        .auth-link { text-align: center; margin-top: 22px; font-size: 13px; color: var(--text-light); }
+        .auth-link a { color: var(--primary); font-weight: 700; cursor: pointer; text-decoration: none; }
+        .auth-link a:hover { text-decoration: underline; }
+
+        .alert {
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .alert-error { background: var(--red-soft); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+        .alert-ok { background: var(--green-soft); color: #047857; border: 1px solid rgba(16,185,129,0.2); }
+
+        /* --- dashboard layout --- */
+        .dashboard { display: none; min-height: 100vh; }
+
+        .sidebar {
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            width: 260px;
+            background: linear-gradient(180deg, var(--sidebar-bg), var(--sidebar-bg2));
+            color: white;
+            z-index: 100;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-brand {
+            padding: 24px 22px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+        .sidebar-brand span.logo { font-size: 32px; }
+        .sidebar-brand h2 { font-size: 17px; font-weight: 800; }
+        .sidebar-brand h2 small { display: block; font-size: 11px; font-weight: 400; color: rgba(255,255,255,0.5); margin-top: 2px; }
+
+        .sidebar-section { padding: 18px 14px 0; }
+        .sidebar-section-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: rgba(255,255,255,0.35);
+            padding: 0 10px 8px;
+            font-weight: 600;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.6);
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-bottom: 2px;
+        }
+        .nav-link:hover { background: rgba(255,255,255,0.07); color: white; }
+        .nav-link.active { background: var(--primary); color: white; box-shadow: 0 3px 12px rgba(79,70,229,0.4); }
+        .nav-link .icon { font-size: 18px; width: 22px; text-align: center; }
+        .nav-link .count {
+            margin-left: auto;
+            background: var(--accent);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 10px;
+        }
+
+        .content-area { margin-left: 260px; min-height: 100vh; }
+
+        /* --- header bar --- */
+        .header-bar {
+            background: var(--card);
+            padding: 14px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .header-bar .page-info h2 { font-size: 20px; font-weight: 700; }
+        .header-bar .page-info p { font-size: 12px; color: var(--text-light); }
+
+        .header-right { display: flex; align-items: center; gap: 14px; }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 14px 6px 6px;
+            background: var(--bg);
+            border-radius: 10px;
+        }
+        .user-chip .avatar {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700; font-size: 14px;
+        }
+        .user-chip .info .name { font-size: 13px; font-weight: 600; }
+        .user-chip .info .role { font-size: 11px; color: var(--text-light); }
+
+        .logout-btn {
+            padding: 7px 14px;
+            background: none;
+            border: 1px solid var(--red);
+            color: var(--red);
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: 0.2s;
+        }
+        .logout-btn:hover { background: var(--red); color: white; }
+
+        /* --- page content area --- */
+        .page-wrap { padding: 26px 28px; }
+        .page { display: none; animation: pageIn 0.3s ease; }
+        .page.active { display: block; }
+
+        @keyframes pageIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- stat cards row --- */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 26px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            padding: 22px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+
+        .stat-card .stat-icon {
+            width: 52px; height: 52px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+        .stat-card .stat-icon.c1 { background: var(--primary-soft); }
+        .stat-card .stat-icon.c2 { background: var(--green-soft); }
+        .stat-card .stat-icon.c3 { background: var(--accent-soft); }
+        .stat-card .stat-icon.c4 { background: var(--teal-soft); }
+
+        .stat-card .stat-data h3 { font-size: 28px; font-weight: 800; line-height: 1; }
+        .stat-card .stat-data p { font-size: 12px; color: var(--text-light); margin-top: 3px; }
+
+        /* --- cards --- */
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-bottom: 22px;
+        }
+        .card-head {
+            padding: 16px 22px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .card-head h3 { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .card-body { padding: 22px; }
+
+        /* --- tables --- */
+        .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; }
+        thead th {
+            background: var(--bg);
+            padding: 11px 14px;
+            text-align: left;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-light);
+            font-weight: 700;
+        }
+        tbody td { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 13px; }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: rgba(79,70,229,0.02); }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .badge-green { background: var(--green-soft); color: var(--green); }
+        .badge-rose { background: var(--accent-soft); color: var(--accent); }
+        .badge-teal { background: var(--teal-soft); color: var(--teal); }
+        .badge-red { background: var(--red-soft); color: var(--red); }
+        .badge-amber { background: var(--amber-soft); color: #d97706; }
+        .badge-purple { background: var(--primary-soft); color: var(--primary); }
+
+        /* --- search bar --- */
+        .search-box { position: relative; max-width: 280px; }
+        .search-box input {
+            width: 100%;
+            padding: 9px 14px 9px 36px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 13px;
+            font-family: inherit;
+            transition: 0.2s;
+            background: var(--card);
+        }
+        .search-box input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+        .search-box .s-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-size: 15px; color: var(--text-lighter); }
+
+        .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+
+        /* --- book cards grid --- */
+        .books-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 18px;
+        }
+
+        .book-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .book-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+        .book-card .color-strip { height: 5px; }
+        .book-card .book-info { padding: 18px; }
+        .book-card .book-info h4 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+        .book-card .book-info .author { font-size: 12px; color: var(--text-light); margin-bottom: 12px; }
+        .book-card .detail-line { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; }
+        .book-card .detail-line span:first-child { color: var(--text-light); }
+        .book-card .detail-line span:last-child { font-weight: 600; }
+        .book-card .card-actions {
+            padding: 14px 18px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 6px;
+        }
+        .book-card .card-actions .btn { flex: 1; }
+
+        /* color strips for books */
+        .strip-1 { background: linear-gradient(90deg, #4f46e5, #818cf8); }
+        .strip-2 { background: linear-gradient(90deg, #f43f5e, #fb7185); }
+        .strip-3 { background: linear-gradient(90deg, #10b981, #34d399); }
+        .strip-4 { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .strip-5 { background: linear-gradient(90deg, #06b6d4, #22d3ee); }
+        .strip-6 { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+
+        /* --- issue / return layout --- */
+        .split-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+        .qr-scan-area {
+            background: linear-gradient(135deg, #f0f0ff, #fff0f5);
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 40px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .qr-scan-area:hover { border-color: var(--primary); background: linear-gradient(135deg, #e8e6ff, #ffe8f0); }
+        .qr-scan-area .scan-emoji { font-size: 50px; margin-bottom: 12px; }
+        .qr-scan-area h4 { margin-bottom: 6px; }
+        .qr-scan-area p { font-size: 13px; color: var(--text-light); }
+
+        /* --- qr card grid --- */
+        .qr-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+            gap: 20px;
+        }
+
+        .qr-member-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: 0.2s;
+        }
+        .qr-member-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+        }
+        .qr-member-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--primary); }
+        .qr-member-card .m-name { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+        .qr-member-card .m-meta { font-size: 12px; color: var(--text-light); margin-bottom: 14px; }
+        .qr-member-card .qr-box {
+            display: inline-block;
+            padding: 12px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            margin-bottom: 14px;
+        }
+        .qr-member-card .qr-actions { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
+
+        /* --- modal overlay --- */
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .overlay.show { display: flex; }
+
+        .modal-box {
+            background: var(--card);
+            border-radius: 18px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalPop 0.25s ease-out;
+        }
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.92); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .modal-top { padding: 20px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .modal-top h3 { font-size: 17px; font-weight: 700; }
+        .close-btn {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: var(--bg);
+            font-size: 16px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: 0.15s;
+        }
+        .close-btn:hover { background: var(--red); color: white; }
+        .modal-body { padding: 22px; }
+        .modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+
+        /* form grid inside modals */
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .form-row .span-full { grid-column: 1 / -1; }
+
+        /* --- student welcome banner --- */
+        .welcome-banner {
+            background: linear-gradient(135deg, var(--primary), #7c3aed);
+            color: white;
+            border-radius: var(--radius);
+            padding: 24px 28px;
+            margin-bottom: 22px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .welcome-banner .wb-icon { font-size: 44px; }
+        .welcome-banner h3 { font-size: 20px; font-weight: 700; margin-bottom: 3px; }
+        .welcome-banner p { font-size: 13px; opacity: 0.85; }
+
+        /* --- empty state --- */
+        .empty-box { text-align: center; padding: 50px 20px; color: var(--text-light); }
+        .empty-box .emoji { font-size: 56px; margin-bottom: 12px; opacity: 0.5; }
+        .empty-box h4 { font-size: 17px; color: var(--text); margin-bottom: 5px; }
+        .empty-box p { font-size: 13px; }
+
+        /* --- toast notifications --- */
+        .toasts { position: fixed; top: 16px; right: 16px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+        .toast-msg {
+            padding: 13px 20px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+            animation: slideToast 0.35s ease;
+            min-width: 260px;
+        }
+        .toast-msg.t-ok { background: var(--green); }
+        .toast-msg.t-err { background: var(--red); }
+        .toast-msg.t-info { background: var(--primary); }
+        .toast-msg.t-warn { background: var(--amber); color: #1e293b; }
+
+        @keyframes slideToast { from { opacity: 0; transform: translateX(80px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes fadeToast { from { opacity: 1; } to { opacity: 0; transform: translateX(60px); } }
+
+        /* activity feed items */
+        .feed-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .feed-item:last-child { border-bottom: none; }
+        .feed-item .fi-icon {
+            width: 38px; height: 38px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .feed-item .fi-text { flex: 1; }
+        .feed-item .fi-text p { font-size: 13px; }
+        .feed-item .fi-text span { font-size: 11px; color: var(--text-lighter); }
+
+        /* --- hamburger for mobile --- */
+        .menu-btn { display: none; background: none; border: none; font-size: 24px; cursor: pointer; }
+        .sidebar-mask { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.45); z-index: 99; }
+        .sidebar-mask.visible { display: block; }
+
+        .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+
+        /* --- responsive tweaks --- */
+        @media (max-width: 1024px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .content-area { margin-left: 0; }
+            .menu-btn { display: block; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .split-layout, .form-row, .dash-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 600px) {
+            .page-wrap { padding: 18px 14px; }
+            .header-bar { padding: 10px 14px; }
+            .auth-card { padding: 30px 22px; }
+            .stats-row { grid-template-columns: 1fr; }
+            .qr-grid, .books-grid { grid-template-columns: 1fr; }
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: var(--text-lighter); border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+<!-- toasts -->
+<div class="toasts" id="toastBox"></div>
+
+<!-- ========== LOGIN ========== -->
+<div class="auth-page" id="loginPage">
+    <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+    <div class="auth-card">
+        <div class="brand">
+            <a href="https://soundarya.edu.in/" target="_blank">
+    <img src="C:\Users\Syed Ayaan Maheer\OneDrive\Desktop\asa.png" alt="College Logo" style="width:100px; height:auto;">
+</a>
+            <h1>Welcome To SIMS Lib</h1>
+            <p>Sign in to your library account</p>
+        </div>
+        <div class="alert alert-error" id="loginErr"></div>
+        <div class="alert alert-ok" id="loginOk"></div>
+        <form onsubmit="doLogin(event)">
+            <div class="field">
+                <label>Email Address</label>
+                <input type="email" id="logEmail" placeholder="you@example.com" required>
+            </div>
+            <div class="field">
+                <label>Password</label>
+                <input type="password" id="logPass" placeholder="Enter password" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+        </form>
+        <div class="auth-link">No account yet? <a onclick="flipAuth('signup')">Create one</a></div>
+        
+    </div>
+</div>
+
+<!-- ========== SIGNUP ========== -->
+<div class="auth-page" id="signupPage" style="display:none">
+    <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+    <div class="auth-card">
+        <div class="brand">
+           <a href="https://soundarya.edu.in/" target="_blank">
+    <img src="C:\Users\Syed Ayaan Maheer\OneDrive\Desktop\asa.png" alt="College Logo" style="width:100px; height:auto;">
+</a>
+            <h1>Create Account</h1>
+            <p>Join the library community</p>
+        </div>
+        <div class="alert alert-error" id="signupErr"></div>
+        <form onsubmit="doSignup(event)">
+            <div class="field"><label>Full Name</label><input type="text" id="regName" placeholder="Your full name" required></div>
+            <div class="field"><label>Email</label><input type="email" id="regEmail" placeholder="you@example.com" required></div>
+            <div class="field"><label>Password</label><input type="password" id="regPass" placeholder="Min 8 characters" required minlength="8"></div>
+            <div class="field"><label>Confirm Password</label><input type="password" id="regConfirm" placeholder="Re-enter password" required></div>
+            <div class="field">
+                <label>I am a...</label>
+                <select id="regRole">
+                    <option value="student">Student</option>
+                    <option value="librarian">Librarian</option>
+                    <option value="admin">Administrator</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Create Account</button>
+        </form>
+        <div class="auth-link">Already registered? <a onclick="flipAuth('login')">Sign in</a></div>
+    </div>
+</div>
+
+<!-- ========== MAIN APP ========== -->
+<div class="dashboard" id="dashboard">
+    <div class="sidebar-mask" id="sidebarMask" onclick="toggleMenu()"></div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+           <a href="https://soundarya.edu.in/" target="_blank">
+    <img src="C:\Users\Syed Ayaan Maheer\OneDrive\Desktop\asa.png" alt="College Logo" style="width:100px; height:auto;">
+</a>
+            <h2>LibraryMS <small>Management System</small></h2>
+        </div>
+        <div id="navContainer"></div>
+    </aside>
+
+    <div class="content-area">
+        <header class="header-bar">
+            <div style="display:flex;align-items:center;gap:12px">
+                <button class="menu-btn" onclick="toggleMenu()">☰</button>
+                <div class="page-info">
+                    <h2 id="headerTitle">Dashboard</h2>
+                    <p id="headerSub">Library overview</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="user-chip">
+                    <div class="avatar" id="chipAvatar">A</div>
+                    <div class="info">
+                        <div class="name" id="chipName">Admin</div>
+                        <div class="role" id="chipRole">Administrator</div>
+                    </div>
+                </div>
+                <button class="logout-btn" onclick="doLogout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="page-wrap">
+
+            <!-- PAGE: Dashboard -->
+            <div class="page active" id="pg-dashboard">
+                <div id="welcomeBanner"></div>
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-icon c1">📖</div>
+                        <div class="stat-data"><h3 id="stBooks">0</h3><p>Total Books</p></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon c2">👥</div>
+                        <div class="stat-data"><h3 id="stMembers">0</h3><p>Members</p></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon c3">📤</div>
+                        <div class="stat-data"><h3 id="stIssued">0</h3><p>Issued Now</p></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon c4">📗</div>
+                        <div class="stat-data"><h3 id="stAvail">0</h3><p>Available</p></div>
+                    </div>
+                </div>
+                <div class="dash-grid" id="dashboardGrid">
+                    <div class="card">
+                        <div class="card-head"><h3>📋 Recent Activity</h3></div>
+                        <div class="card-body" id="recentFeed"></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-head"><h3>⏳ Currently Issued</h3></div>
+                        <div class="card-body" id="issuedFeed"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE: Books -->
+            <div class="page" id="pg-books">
+                <div class="toolbar">
+                    <div class="search-box">
+                        <span class="s-icon">🔍</span>
+                        <input type="text" id="bookSearch" placeholder="Search books..." oninput="renderBooks()">
+                    </div>
+                    <div id="bookToolbarRight"></div>
+                </div>
+                <div class="books-grid" id="booksContainer"></div>
+            </div>
+
+            <!-- PAGE: Members -->
+            <div class="page" id="pg-members">
+                <div class="toolbar">
+                    <div class="search-box">
+                        <span class="s-icon">🔍</span>
+                        <input type="text" id="memberSearch" placeholder="Search members..." oninput="renderMembers()">
+                    </div>
+                    <button class="btn btn-primary" onclick="openModal('memberModal')">+ Add Member</button>
+                </div>
+                <div class="card"><div class="card-body"><div class="table-wrap">
+                    <table>
+                        <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Issued</th><th>Actions</th></tr></thead>
+                        <tbody id="membersTbody"></tbody>
+                    </table>
+                </div></div></div>
+            </div>
+
+            <!-- PAGE: Issue Book -->
+            <div class="page" id="pg-issue">
+                <div class="card">
+                    <div class="card-head"><h3>📤 Issue a Book</h3></div>
+                    <div class="card-body">
+                        <div class="split-layout">
+                            <div class="qr-scan-area" onclick="document.getElementById('issueMember').focus()">
+                                <div class="scan-emoji">📱</div>
+                                <h4>Scan QR or Enter ID</h4>
+                                <p>Scan the member's QR card or type their member ID</p>
+                            </div>
+                            <form onsubmit="doIssue(event)">
+                                <div class="field"><label>Member ID</label><input type="text" id="issueMember" placeholder="e.g. MEM0001" required></div>
+                                <div class="field"><label>Select Book</label><select id="issueBookSel" required><option value="">Pick a book...</option></select></div>
+                                <div class="field"><label>Issue Date</label><input type="date" id="issueDate" required></div>
+                                <div class="field"><label>Due Date</label><input type="date" id="issueDue" required></div>
+                                <button type="submit" class="btn btn-green btn-full">Issue Book</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE: Return Book -->
+            <div class="page" id="pg-return">
+                <div class="card">
+                    <div class="card-head"><h3>📥 Return a Book</h3></div>
+                    <div class="card-body">
+                        <div class="split-layout">
+                            <div class="qr-scan-area" onclick="document.getElementById('returnSel').focus()">
+                                <div class="scan-emoji">📱</div>
+                                <h4>Scan QR or Select</h4>
+                                <p>Choose the issued record to process the return</p>
+                            </div>
+                            <form onsubmit="doReturn(event)">
+                                <div class="field"><label>Select Issued Record</label><select id="returnSel" required><option value="">Pick a record...</option></select></div>
+                                <div class="field"><label>Return Date</label><input type="date" id="returnDate" required></div>
+                                <div id="returnPreview" style="display:none;margin-bottom:16px"></div>
+                                <button type="submit" class="btn btn-rose btn-full">Process Return</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE: Issued Records -->
+            <div class="page" id="pg-records">
+                <div class="toolbar">
+                    <div class="search-box">
+                        <span class="s-icon">🔍</span>
+                        <input type="text" id="recordSearch" placeholder="Search records..." oninput="renderRecords()">
+                    </div>
+                    <select id="recordFilter" onchange="renderRecords()" style="padding:9px 14px;border:2px solid var(--border);border-radius:10px;font-size:13px;font-family:inherit;">
+                        <option value="all">All Records</option>
+                        <option value="issued">Currently Issued</option>
+                        <option value="returned">Returned</option>
+                        <option value="overdue">Overdue</option>
+                    </select>
+                </div>
+                <div class="card"><div class="card-body"><div class="table-wrap">
+                    <table>
+                        <thead><tr><th>ID</th><th>Book</th><th>Member</th><th>Issued</th><th>Due</th><th>Returned</th><th>Status</th></tr></thead>
+                        <tbody id="recordsTbody"></tbody>
+                    </table>
+                </div></div></div>
+            </div>
+
+            <!-- PAGE: QR Cards -->
+            <div class="page" id="pg-qrcards">
+                <div class="toolbar">
+                    <h3 style="font-size:18px">🎫 Member QR Cards</h3>
+                    <button class="btn btn-primary" onclick="openModal('memberModal')">+ Add Member</button>
+                </div>
+                <div class="qr-grid" id="qrContainer"></div>
+            </div>
+
+            <!-- PAGE: My Books (student) -->
+            <div class="page" id="pg-mybooks">
+                <div class="card">
+                    <div class="card-head"><h3>📚 My Borrowed Books</h3></div>
+                    <div class="card-body"><div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Book</th><th>Author</th><th>Issued</th><th>Due</th><th>Status</th></tr></thead>
+                            <tbody id="myBooksTbody"></tbody>
+                        </table>
+                    </div></div>
+                </div>
+            </div>
+
+            <!-- PAGE: My Card (student) -->
+            <div class="page" id="pg-mycard">
+                <div class="card">
+                    <div class="card-head"><h3>🎫 My Library Card</h3></div>
+                    <div class="card-body" style="text-align:center" id="myCardContainer"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ========== MODALS ========== -->
+
+<!-- Add/Edit Book -->
+<div class="overlay" id="bookModal">
+    <div class="modal-box">
+        <div class="modal-top"><h3 id="bookModalTitle">Add Book</h3><button class="close-btn" onclick="closeModal('bookModal')">✕</button></div>
+        <div class="modal-body">
+            <form onsubmit="saveBook(event)" id="bookForm">
+                <input type="hidden" id="editBookId">
+                <div class="form-row">
+                    <div class="span-full field"><label>Title</label><input type="text" id="fBookTitle" required></div>
+                    <div class="field"><label>Author</label><input type="text" id="fBookAuthor" required></div>
+                    <div class="field"><label>ISBN</label><input type="text" id="fBookIsbn" required></div>
+                    <div class="field">
+                        <label>Category</label>
+                        <select id="fBookCat" required>
+                            <option value="">Choose...</option>
+                            <option>Fiction</option><option>Non-Fiction</option><option>Science</option>
+                            <option>Technology</option><option>History</option><option>Biography</option>
+                            <option>Philosophy</option><option>Self-Help</option><option>Other</option>
+                        </select>
+                    </div>
+                    <div class="field"><label>Copies</label><input type="number" id="fBookQty" min="1" value="1" required></div>
+                </div>
+                <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:8px">
+                    <button type="button" class="btn btn-ghost" onclick="closeModal('bookModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Book</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Member -->
+<div class="overlay" id="memberModal">
+    <div class="modal-box">
+        <div class="modal-top"><h3>Add Member</h3><button class="close-btn" onclick="closeModal('memberModal')">✕</button></div>
+        <div class="modal-body">
+            <form onsubmit="saveMember(event)" id="memberForm">
+                <div class="form-row">
+                    <div class="span-full field"><label>Full Name</label><input type="text" id="fMemName" required></div>
+                    <div class="field"><label>Email</label><input type="email" id="fMemEmail" required></div>
+                    <div class="field"><label>Phone</label><input type="tel" id="fMemPhone" required></div>
+                    <div class="span-full field">
+                        <label>Role</label>
+                        <select id="fMemRole">
+                            <option value="student">Student</option>
+                            <option value="librarian">Librarian</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:8px">
+                    <button type="button" class="btn btn-ghost" onclick="closeModal('memberModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Member</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Book Details -->
+<div class="overlay" id="detailsModal">
+    <div class="modal-box">
+        <div class="modal-top"><h3>Book Details</h3><button class="close-btn" onclick="closeModal('detailsModal')">✕</button></div>
+        <div class="modal-body" id="detailsBody"></div>
+    </div>
+</div>
+
+<!-- QR View -->
+<div class="overlay" id="qrViewModal">
+    <div class="modal-box" style="max-width:400px">
+        <div class="modal-top"><h3>Library Card</h3><button class="close-btn" onclick="closeModal('qrViewModal')">✕</button></div>
+        <div class="modal-body" style="text-align:center" id="qrViewBody"></div>
+    </div>
+</div>
+
+
+<script>
+/*
+    Library Management System
+    Using localStorage for persistence
+    Everything runs client-side
+*/
+
+// ============ storage helpers ============
+function load(key) {
+    try { return JSON.parse(localStorage.getItem(key)) || []; }
+    catch(e) { return []; }
+}
+function save(key, data) {
+    localStorage.setItem(key, JSON.stringify(data));
+}
+
+// simple id generators
+function makeId() {
+    return 'id_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+function nextMemberId() {
+    var members = load('lib_members');
+    return 'MEM' + String(members.length + 1).padStart(4, '0');
+}
+function nextBookId() {
+    var books = load('lib_books');
+    return 'BK' + String(books.length + 1).padStart(4, '0');
+}
+
+var currentUser = null;  // who's logged in right now
+var stripClasses = ['strip-1','strip-2','strip-3','strip-4','strip-5','strip-6'];
+
+
+// ============ toast ============
+function notify(message, type) {
+    type = type || 'info';
+    var box = document.getElementById('toastBox');
+    var el = document.createElement('div');
+    var icons = { ok: '✅', err: '❌', info: 'ℹ️', warn: '⚠️' };
+    el.className = 'toast-msg t-' + type;
+    el.innerHTML = '<span>' + (icons[type] || 'ℹ️') + '</span> ' + message;
+    box.appendChild(el);
+
+    setTimeout(function() {
+        el.style.animation = 'fadeToast 0.3s ease forwards';
+        setTimeout(function() { el.remove(); }, 300);
+    }, 3200);
+}
+
+
+// ============ auth ============
+function flipAuth(which) {
+    if (which === 'signup') {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('signupPage').style.display = 'flex';
+    } else {
+        document.getElementById('signupPage').style.display = 'none';
+        document.getElementById('loginPage').style.display = 'flex';
+    }
+}
+
+function doSignup(e) {
+    e.preventDefault();
+    var name = document.getElementById('regName').value.trim();
+    var email = document.getElementById('regEmail').value.trim();
+    var pass = document.getElementById('regPass').value;
+    var confirm = document.getElementById('regConfirm').value;
+    var role = document.getElementById('regRole').value;
+    var errBox = document.getElementById('signupErr');
+
+    if (pass !== confirm) {
+        errBox.textContent = "Passwords don't match.";
+        errBox.style.display = 'block';
+        return;
+    }
+
+    var users = load('lib_users');
+    // check for duplicate email
+    for (var i = 0; i < users.length; i++) {
+        if (users[i].email === email) {
+            errBox.textContent = 'That email is already taken.';
+            errBox.style.display = 'block';
+            return;
+        }
+    }
+
+    var newUser = {
+        id: makeId(),
+        name: name,
+        email: email,
+        password: btoa(pass),
+        role: role,
+        created: new Date().toISOString().split('T')[0]
+    };
+    users.push(newUser);
+    save('lib_users', users);
+
+    // if they're a student, auto-add them as a library member too
+    if (role === 'student') {
+        var members = load('lib_members');
+        members.push({
+            id: nextMemberId(),
+            name: name,
+            email: email,
+            phone: 'Not provided',
+            role: 'student',
+            joined: newUser.created,
+            userId: newUser.id
+        });
+        save('lib_members', members);
+    }
+
+    errBox.style.display = 'none';
+    // show success on login page
+    var okBox = document.getElementById('loginOk');
+    okBox.textContent = 'Account created! You can sign in now.';
+    okBox.style.display = 'block';
+    flipAuth('login');
+    document.getElementById('signupPage').querySelector('form').reset();
+}
+
+function doLogin(e) {
+    e.preventDefault();
+    var email = document.getElementById('logEmail').value.trim();
+    var pass = document.getElementById('logPass').value;
+    var errBox = document.getElementById('loginErr');
+
+    var users = load('lib_users');
+
+    // seed a default admin if nobody exists yet
+    if (users.length === 0) {
+        users.push({
+            id: makeId(),
+            name: 'Admin',
+            email: 'admin@library.com',
+            password: btoa('admin123'),
+            role: 'admin',
+            created: new Date().toISOString().split('T')[0]
+        });
+        save('lib_users', users);
+    }
+
+    var found = null;
+    for (var i = 0; i < users.length; i++) {
+        if (users[i].email === email && atob(users[i].password) === pass) {
+            found = users[i];
+            break;
+        }
+    }
+
+    if (!found) {
+        errBox.textContent = 'Wrong email or password.';
+        errBox.style.display = 'block';
+        return;
+    }
+
+    errBox.style.display = 'none';
+    document.getElementById('loginOk').style.display = 'none';
+    localStorage.setItem('lib_session', JSON.stringify(found));
+    launchApp(found);
+}
+
+function doLogout() {
+    localStorage.removeItem('lib_session');
+    currentUser = null;
+    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('loginPage').style.display = 'flex';
+    document.getElementById('logEmail').value = '';
+    document.getElementById('logPass').value = '';
+    notify('Signed out.', 'info');
+}
+
+function launchApp(user) {
+    currentUser = user;
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('signupPage').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+
+    // update header chip
+    document.getElementById('chipName').textContent = user.name;
+    document.getElementById('chipRole').textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+    document.getElementById('chipAvatar').textContent = user.name.charAt(0).toUpperCase();
+
+    seedSampleData();
+    buildSidebar();
+    goTo('dashboard');
+    refreshCounts();
+    notify('Welcome back, ' + user.name + '!', 'ok');
+}
+
+function isStaff() {
+    return currentUser && (currentUser.role === 'admin' || currentUser.role === 'librarian');
+}
+
+
+// ============ sample data ============
+function seedSampleData() {
+    if (load('lib_books').length > 0) return;
+
+    save('lib_books', [
+        { id:'BK0001', title:'To Kill a Mockingbird', author:'Harper Lee', isbn:'978-006112', category:'Fiction', qty:5, avail:5, added:'2024-01-10' },
+        { id:'BK0002', title:'A Brief History of Time', author:'Stephen Hawking', isbn:'978-055338', category:'Science', qty:3, avail:3, added:'2024-01-12' },
+        { id:'BK0003', title:'Clean Code', author:'Robert C. Martin', isbn:'978-013235', category:'Technology', qty:4, avail:4, added:'2024-01-15' },
+        { id:'BK0004', title:'1984', author:'George Orwell', isbn:'978-045152', category:'Fiction', qty:6, avail:6, added:'2024-01-18' },
+        { id:'BK0005', title:'Sapiens', author:'Yuval Noah Harari', isbn:'978-006231', category:'History', qty:3, avail:3, added:'2024-02-01' },
+        { id:'BK0006', title:'The Alchemist', author:'Paulo Coelho', isbn:'978-006112x', category:'Fiction', qty:4, avail:4, added:'2024-02-05' }
+    ]);
+
+    if (load('lib_members').length === 0) {
+        save('lib_members', [
+            { id:'MEM0001', name:'Ayaan', email:'ayaan@email.com', phone:'555-0101', role:'student', joined:'2024-01-10' },
+            { id:'MEM0002', name:'Huzaifa', email:'Huzaifa@email.com', phone:'555-0102', role:'student', joined:'2024-01-15' },
+            { id:'MEM0003', name:'jeevan', email:'Jeevan@email.com', phone:'555-0103', role:'student', joined:'2024-02-01' },
+            { id:'MEM0004', name:'joy', email:'Joy@email.com', phone:'555-0123', role:'student', joined:'2024-02-01' },
+            { id:'MEM0005', name:'manikanta', email:'manikanta@email.com', phone:'555-0104', role:'student', joined:'2024-02-01' },
+        ]);
+    }
+}
+
+
+// ============ navigation ============
+function buildSidebar() {
+    var nav = document.getElementById('navContainer');
+    var html = '';
+
+    html += '<div class="sidebar-section"><div class="sidebar-section-title">Main</div>';
+    html += '<div class="nav-link active" data-page="dashboard" onclick="goTo(\'dashboard\')"><span class="icon">📊</span> Dashboard</div>';
+    html += '</div>';
+
+    if (isStaff()) {
+        html += '<div class="sidebar-section"><div class="sidebar-section-title">Management</div>';
+        html += '<div class="nav-link" data-page="books" onclick="goTo(\'books\')"><span class="icon">📖</span> Books <span class="count" id="cntBooks">0</span></div>';
+        html += '<div class="nav-link" data-page="members" onclick="goTo(\'members\')"><span class="icon">👥</span> Members <span class="count" id="cntMembers">0</span></div>';
+        html += '</div>';
+
+        html += '<div class="sidebar-section"><div class="sidebar-section-title">Operations</div>';
+        html += '<div class="nav-link" data-page="issue" onclick="goTo(\'issue\')"><span class="icon">📤</span> Issue Book</div>';
+        html += '<div class="nav-link" data-page="return" onclick="goTo(\'return\')"><span class="icon">📥</span> Return Book</div>';
+        html += '<div class="nav-link" data-page="records" onclick="goTo(\'records\')"><span class="icon">📋</span> Records <span class="count" id="cntRecords">0</span></div>';
+        html += '</div>';
+
+        html += '<div class="sidebar-section"><div class="sidebar-section-title">Cards</div>';
+        html += '<div class="nav-link" data-page="qrcards" onclick="goTo(\'qrcards\')"><span class="icon">🎫</span> QR Cards</div>';
+        html += '</div>';
+    } else {
+        // student sees a simpler menu
+        html += '<div class="sidebar-section"><div class="sidebar-section-title">Library</div>';
+        html += '<div class="nav-link" data-page="books" onclick="goTo(\'books\')"><span class="icon">📖</span> Browse Books</div>';
+        html += '<div class="nav-link" data-page="mybooks" onclick="goTo(\'mybooks\')"><span class="icon">📚</span> My Books</div>';
+        html += '<div class="nav-link" data-page="mycard" onclick="goTo(\'mycard\')"><span class="icon">🎫</span> My Card</div>';
+        html += '</div>';
+    }
+
+    nav.innerHTML = html;
+}
+
+function goTo(page) {
+    // hide all pages, show the one we want
+    var pages = document.querySelectorAll('.page');
+    for (var i = 0; i < pages.length; i++) pages[i].classList.remove('active');
+
+    var links = document.querySelectorAll('.nav-link');
+    for (var i = 0; i < links.length; i++) links[i].classList.remove('active');
+
+    var targetPage = document.getElementById('pg-' + page);
+    if (targetPage) targetPage.classList.add('active');
+
+    var targetLink = document.querySelector('.nav-link[data-page="' + page + '"]');
+    if (targetLink) targetLink.classList.add('active');
+
+    // update header text
+    var titles = {
+        dashboard: ['Dashboard', 'Library overview'],
+        books: ['Books', isStaff() ? 'Manage your collection' : 'Browse available books'],
+        members: ['Members', 'Manage library members'],
+        issue: ['Issue Book', 'Lend a book to a member'],
+        return: ['Return Book', 'Process a book return'],
+        records: ['Issued Records', 'Track all transactions'],
+        qrcards: ['QR Cards', 'Member identification cards'],
+        mybooks: ['My Books', 'Books you currently have'],
+        mycard: ['My Card', 'Your library identification']
+    };
+
+    var t = titles[page] || [page, ''];
+    document.getElementById('headerTitle').textContent = t[0];
+    document.getElementById('headerSub').textContent = t[1];
+
+    // render the correct page content
+    var renderers = {
+        dashboard: renderDashboard,
+        books: renderBooks,
+        members: renderMembers,
+        issue: setupIssueForm,
+        return: setupReturnForm,
+        records: renderRecords,
+        qrcards: renderQRCards,
+        mybooks: renderMyBooks,
+        mycard: renderMyCard
+    };
+    if (renderers[page]) renderers[page]();
+
+    // close mobile sidebar
+    if (window.innerWidth <= 1024) {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebarMask').classList.remove('visible');
+    }
+}
+
+function toggleMenu() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarMask').classList.toggle('visible');
+}
+
+
+// ============ modal helpers ============
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// clicking outside the modal box closes it
+var overlays = document.querySelectorAll('.overlay');
+for (var i = 0; i < overlays.length; i++) {
+    overlays[i].addEventListener('click', function(e) {
+        if (e.target === this) this.classList.remove('show');
+    });
+}
+
+
+// ============ counts ============
+function refreshCounts() {
+    var books = load('lib_books');
+    var members = load('lib_members');
+    var txns = load('lib_txns');
+    var activeIssues = txns.filter(function(t) { return t.status === 'issued'; });
+
+    document.getElementById('stBooks').textContent = books.reduce(function(sum, b) { return sum + b.qty; }, 0);
+    document.getElementById('stMembers').textContent = members.length;
+    document.getElementById('stIssued').textContent = activeIssues.length;
+    document.getElementById('stAvail').textContent = books.reduce(function(sum, b) { return sum + b.avail; }, 0);
+
+    // sidebar badges (only exist for staff)
+    var el;
+    el = document.getElementById('cntBooks'); if (el) el.textContent = books.length;
+    el = document.getElementById('cntMembers'); if (el) el.textContent = members.length;
+    el = document.getElementById('cntRecords'); if (el) el.textContent = activeIssues.length;
+}
+
+
+// ============ find the member record for the logged in student ============
+function getMyMember() {
+    if (!currentUser) return null;
+    var members = load('lib_members');
+    // try matching by userId first, then by email
+    for (var i = 0; i < members.length; i++) {
+        if (members[i].userId === currentUser.id) return members[i];
+    }
+    for (var i = 0; i < members.length; i++) {
+        if (members[i].email === currentUser.email) return members[i];
+    }
+    return null;
+}
+
+
+// ============ dashboard ============
+function renderDashboard() {
+    refreshCounts();
+
+    var txns = load('lib_txns');
+    var books = load('lib_books');
+    var members = load('lib_members');
+    var banner = document.getElementById('welcomeBanner');
+    var grid = document.getElementById('dashboardGrid');
+
+    // student gets a personal welcome banner
+    if (!isStaff()) {
+        var me = getMyMember();
+        var myActive = me ? txns.filter(function(t) { return t.memberId === me.id && t.status === 'issued'; }).length : 0;
+        banner.innerHTML = '<div class="welcome-banner"><div class="wb-icon">🎓</div><div>' +
+            '<h3>Hey, ' + currentUser.name + '!</h3>' +
+            '<p>You have ' + myActive + ' book' + (myActive !== 1 ? 's' : '') + ' checked out. ' +
+            (myActive > 0 ? 'Don\'t forget the due dates!' : 'Explore the library to find your next read.') +
+            '</p></div></div>';
+        grid.style.gridTemplateColumns = '1fr';
+    } else {
+        banner.innerHTML = '';
+        grid.style.gridTemplateColumns = '';
+    }
+
+    // recent activity feed
+    var feedEl = document.getElementById('recentFeed');
+    var recent = txns.slice().reverse().slice(0, 7);
+
+    if (recent.length === 0) {
+        feedEl.innerHTML = '<div class="empty-box"><p>Nothing here yet</p></div>';
+    } else {
+        var feedHtml = '';
+        for (var i = 0; i < recent.length; i++) {
+            var t = recent[i];
+            var bk = findById(books, t.bookId);
+            var mem = findById(members, t.memberId);
+            var returned = !!t.returnDate;
+            feedHtml += '<div class="feed-item">' +
+                '<div class="fi-icon" style="background:' + (returned ? 'var(--green-soft)' : 'var(--accent-soft)') + '">' +
+                (returned ? '📥' : '📤') + '</div>' +
+                '<div class="fi-text"><p><strong>' + (mem ? mem.name : '?') + '</strong> ' +
+                (returned ? 'returned' : 'borrowed') + ' <strong>"' + (bk ? bk.title : '?') + '"</strong></p>' +
+                '<span>' + (returned ? t.returnDate : t.issueDate) + '</span></div></div>';
+        }
+        feedEl.innerHTML = feedHtml;
+    }
+
+    // currently issued
+    var issEl = document.getElementById('issuedFeed');
+    var active = txns.filter(function(t) { return t.status === 'issued'; });
+
+    // for students, only show their own
+    if (!isStaff()) {
+        var me = getMyMember();
+        if (me) {
+            active = active.filter(function(t) { return t.memberId === me.id; });
+        }
+    }
+
+    if (active.length === 0) {
+        issEl.innerHTML = '<div class="empty-box"><p>No active checkouts</p></div>';
+    } else {
+        var issHtml = '';
+        var showing = active.slice(0, 6);
+        for (var i = 0; i < showing.length; i++) {
+            var t = showing[i];
+            var bk = findById(books, t.bookId);
+            var mem = findById(members, t.memberId);
+            var overdue = new Date(t.dueDate) < new Date();
+            issHtml += '<div class="feed-item">' +
+                '<div class="fi-icon" style="background:' + (overdue ? 'var(--red-soft)' : 'var(--accent-soft)') + '">' +
+                (overdue ? '⚠️' : '📖') + '</div>' +
+                '<div class="fi-text"><p><strong>' + (bk ? bk.title : '?') + '</strong></p>' +
+                '<span>' + (mem ? mem.name : '?') + ' · Due: ' + t.dueDate +
+                (overdue ? ' <strong style="color:var(--red)">OVERDUE</strong>' : '') +
+                '</span></div></div>';
+        }
+        issEl.innerHTML = issHtml;
+    }
+}
+
+
+// ============ books ============
+function renderBooks() {
+    var books = load('lib_books');
+    var query = (document.getElementById('bookSearch').value || '').toLowerCase();
+    var container = document.getElementById('booksContainer');
+    var toolbar = document.getElementById('bookToolbarRight');
+
+    // only staff can add books
+    toolbar.innerHTML = isStaff()
+        ? '<button class="btn btn-primary" onclick="openAddBook()">+ Add Book</button>'
+        : '';
+
+    var filtered = books.filter(function(b) {
+        return b.title.toLowerCase().indexOf(query) > -1 ||
+               b.author.toLowerCase().indexOf(query) > -1 ||
+               b.category.toLowerCase().indexOf(query) > -1;
+    });
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="empty-box" style="grid-column:1/-1"><div class="emoji">📚</div>' +
+            '<h4>' + (query ? 'No matches' : 'No books yet') + '</h4>' +
+            '<p>' + (query ? 'Try different keywords' : 'Add some books to get started') + '</p></div>';
+        return;
+    }
+
+    var html = '';
+    for (var i = 0; i < filtered.length; i++) {
+        var b = filtered[i];
+        html += '<div class="book-card">' +
+            '<div class="color-strip ' + stripClasses[i % stripClasses.length] + '"></div>' +
+            '<div class="book-info">' +
+            '<h4>' + b.title + '</h4>' +
+            '<p class="author">by ' + b.author + '</p>' +
+            '<div class="detail-line"><span>Category</span><span>' + b.category + '</span></div>' +
+            '<div class="detail-line"><span>ISBN</span><span>' + b.isbn + '</span></div>' +
+            '<div class="detail-line"><span>Available</span><span>' +
+            '<span class="badge ' + (b.avail > 0 ? 'badge-green' : 'badge-rose') + '">' + b.avail + ' / ' + b.qty + '</span>' +
+            '</span></div></div>';
+
+        if (isStaff()) {
+            html += '<div class="card-actions">' +
+                '<button class="btn btn-sm btn-primary" onclick="showBookDetails(\'' + b.id + '\')">Details</button>' +
+                '<button class="btn btn-sm btn-amber" onclick="openEditBook(\'' + b.id + '\')">Edit</button>' +
+                '<button class="btn btn-sm btn-red" onclick="removeBook(\'' + b.id + '\')">Delete</button></div>';
+        } else {
+            html += '<div class="card-actions">' +
+                '<button class="btn btn-sm btn-primary btn-full" onclick="showBookDetails(\'' + b.id + '\')">View Details</button></div>';
+        }
+        html += '</div>';
+    }
+    container.innerHTML = html;
+    refreshCounts();
+}
+
+function openAddBook() {
+    document.getElementById('bookModalTitle').textContent = 'Add Book';
+    document.getElementById('editBookId').value = '';
+    document.getElementById('bookForm').reset();
+    openModal('bookModal');
+}
+
+function openEditBook(id) {
+    var books = load('lib_books');
+    var book = findById(books, id);
+    if (!book) return;
+
+    document.getElementById('bookModalTitle').textContent = 'Edit Book';
+    document.getElementById('editBookId').value = book.id;
+    document.getElementById('fBookTitle').value = book.title;
+    document.getElementById('fBookAuthor').value = book.author;
+    document.getElementById('fBookIsbn').value = book.isbn;
+    document.getElementById('fBookCat').value = book.category;
+    document.getElementById('fBookQty').value = book.qty;
+    openModal('bookModal');
+}
+
+function saveBook(e) {
+    e.preventDefault();
+    var books = load('lib_books');
+    var editId = document.getElementById('editBookId').value;
+
+    var title = document.getElementById('fBookTitle').value.trim();
+    var author = document.getElementById('fBookAuthor').value.trim();
+    var isbn = document.getElementById('fBookIsbn').value.trim();
+    var category = document.getElementById('fBookCat').value;
+    var qty = parseInt(document.getElementById('fBookQty').value, 10);
+
+    if (editId) {
+        // editing existing book
+        for (var i = 0; i < books.length; i++) {
+            if (books[i].id === editId) {
+                var diff = qty - books[i].qty;
+                books[i].title = title;
+                books[i].author = author;
+                books[i].isbn = isbn;
+                books[i].category = category;
+                books[i].qty = qty;
+                books[i].avail = Math.max(0, books[i].avail + diff);
+                break;
+            }
+        }
+        save('lib_books', books);
+        notify('Book updated!', 'ok');
+    } else {
+        // adding new book
+        books.push({
+            id: nextBookId(),
+            title: title,
+            author: author,
+            isbn: isbn,
+            category: category,
+            qty: qty,
+            avail: qty,
+            added: new Date().toISOString().split('T')[0]
+        });
+        save('lib_books', books);
+        notify('"' + title + '" added to library!', 'ok');
+    }
+
+    document.getElementById('bookForm').reset();
+    closeModal('bookModal');
+    renderBooks();
+}
+
+function removeBook(id) {
+    if (!confirm('Really delete this book?')) return;
+
+    var txns = load('lib_txns');
+    var hasActive = false;
+    for (var i = 0; i < txns.length; i++) {
+        if (txns[i].bookId === id && txns[i].status === 'issued') { hasActive = true; break; }
+    }
+    if (hasActive) { notify('Can\'t delete — someone still has this book.', 'err'); return; }
+
+    var books = load('lib_books');
+    var removed = findById(books, id);
+    save('lib_books', books.filter(function(b) { return b.id !== id; }));
+    renderBooks();
+    notify('"' + (removed ? removed.title : '') + '" removed.', 'ok');
+}
+
+function showBookDetails(id) {
+    var books = load('lib_books');
+    var txns = load('lib_txns');
+    var members = load('lib_members');
+    var book = findById(books, id);
+    if (!book) return;
+
+    var activeForBook = txns.filter(function(t) { return t.bookId === id && t.status === 'issued'; });
+
+    var html = '<div class="detail-line"><span>Title</span><span><strong>' + book.title + '</strong></span></div>' +
+        '<div class="detail-line"><span>Author</span><span>' + book.author + '</span></div>' +
+        '<div class="detail-line"><span>ISBN</span><span>' + book.isbn + '</span></div>' +
+        '<div class="detail-line"><span>Category</span><span>' + book.category + '</span></div>' +
+        '<div class="detail-line"><span>Total copies</span><span>' + book.qty + '</span></div>' +
+        '<div class="detail-line"><span>Available</span><span class="badge ' + (book.avail > 0 ? 'badge-green' : 'badge-rose') + '">' + book.avail + '</span></div>';
+
+    if (activeForBook.length > 0 && isStaff()) {
+        html += '<h4 style="margin:18px 0 10px">Currently checked out by:</h4>' +
+            '<table><thead><tr><th>Member</th><th>Due Date</th></tr></thead><tbody>';
+        for (var i = 0; i < activeForBook.length; i++) {
+            var mem = findById(members, activeForBook[i].memberId);
+            html += '<tr><td>' + (mem ? mem.name : '?') + '</td><td>' + activeForBook[i].dueDate + '</td></tr>';
+        }
+        html += '</tbody></table>';
+    }
+
+    document.getElementById('detailsBody').innerHTML = html;
+    openModal('detailsModal');
+}
+
+
+// ============ members ============
+function renderMembers() {
+    var members = load('lib_members');
+    var txns = load('lib_txns');
+    var query = (document.getElementById('memberSearch').value || '').toLowerCase();
+    var tbody = document.getElementById('membersTbody');
+
+    var filtered = members.filter(function(m) {
+        return m.name.toLowerCase().indexOf(query) > -1 ||
+               m.email.toLowerCase().indexOf(query) > -1 ||
+               m.id.toLowerCase().indexOf(query) > -1;
+    });
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7"><div class="empty-box"><div class="emoji">👥</div>' +
+            '<h4>' + (query ? 'No results' : 'No members') + '</h4></div></td></tr>';
+        return;
+    }
+
+    var html = '';
+    for (var i = 0; i < filtered.length; i++) {
+        var m = filtered[i];
+        var issued = txns.filter(function(t) { return t.memberId === m.id && t.status === 'issued'; }).length;
+        var roleBadge = m.role === 'student' ? 'badge-teal' : m.role === 'librarian' ? 'badge-purple' : 'badge-amber';
+
+        html += '<tr>' +
+            '<td><strong>' + m.id + '</strong></td>' +
+            '<td>' + m.name + '</td>' +
+            '<td>' + m.email + '</td>' +
+            '<td>' + m.phone + '</td>' +
+            '<td><span class="badge ' + roleBadge + '">' + m.role + '</span></td>' +
+            '<td><span class="badge ' + (issued > 0 ? 'badge-rose' : 'badge-green') + '">' + issued + '</span></td>' +
+            '<td><div style="display:flex;gap:5px">' +
+            '<button class="btn btn-sm btn-primary" onclick="showQR(\'' + m.id + '\')">QR</button>' +
+            '<button class="btn btn-sm btn-red" onclick="removeMember(\'' + m.id + '\')">Del</button>' +
+            '</div></td></tr>';
+    }
+    tbody.innerHTML = html;
+    refreshCounts();
+}
+
+function saveMember(e) {
+    e.preventDefault();
+    var members = load('lib_members');
+    var newMember = {
+        id: nextMemberId(),
+        name: document.getElementById('fMemName').value.trim(),
+        email: document.getElementById('fMemEmail').value.trim(),
+        phone: document.getElementById('fMemPhone').value.trim(),
+        role: document.getElementById('fMemRole').value,
+        joined: new Date().toISOString().split('T')[0]
+    };
+    members.push(newMember);
+    save('lib_members', members);
+
+    document.getElementById('memberForm').reset();
+    closeModal('memberModal');
+    renderMembers();
+    renderQRCards();
+    notify(newMember.name + ' added as ' + newMember.role + '!', 'ok');
+}
+
+function removeMember(id) {
+    if (!confirm('Remove this member?')) return;
+    var txns = load('lib_txns');
+    for (var i = 0; i < txns.length; i++) {
+        if (txns[i].memberId === id && txns[i].status === 'issued') {
+            notify('Can\'t remove — they have unreturned books.', 'err');
+            return;
+        }
+    }
+    var members = load('lib_members');
+    var who = findById(members, id);
+    save('lib_members', members.filter(function(m) { return m.id !== id; }));
+    renderMembers();
+    renderQRCards();
+    notify((who ? who.name : 'Member') + ' removed.', 'ok');
+}
+
+
+// ============ qr cards ============
+function renderQRCards() {
+    var members = load('lib_members');
+    var txns = load('lib_txns');
+    var container = document.getElementById('qrContainer');
+
+    if (members.length === 0) {
+        container.innerHTML = '<div class="empty-box" style="grid-column:1/-1"><div class="emoji">🎫</div><h4>No members yet</h4></div>';
+        return;
+    }
+
+    var html = '';
+    for (var i = 0; i < members.length; i++) {
+        var m = members[i];
+        var issued = txns.filter(function(t) { return t.memberId === m.id && t.status === 'issued'; }).length;
+
+        html += '<div class="qr-member-card">' +
+            '<div class="m-name">' + m.name + '</div>' +
+            '<div class="m-meta">' + m.id + ' · ' + m.role + '</div>' +
+            '<div class="qr-box" id="qrbox-' + m.id + '"></div><br>' +
+            '<span class="badge ' + (issued > 0 ? 'badge-rose' : 'badge-green') + '">' +
+            (issued > 0 ? issued + ' issued' : 'No active loans') + '</span>' +
+            '<div class="qr-actions">' +
+            '<button class="btn btn-sm btn-primary" onclick="showQR(\'' + m.id + '\')">View</button>' +
+            '<button class="btn btn-sm btn-rose" onclick="printCard(\'' + m.id + '\')">Print</button>' +
+            '</div></div>';
+    }
+    container.innerHTML = html;
+
+    // qrcode.js needs the DOM element to exist before generating
+    setTimeout(function() {
+        for (var i = 0; i < members.length; i++) {
+            generateQR('qrbox-' + members[i].id, members[i], 120);
+        }
+    }, 80);
+}
+
+function generateQR(elementId, member, size) {
+    var el = document.getElementById(elementId);
+    if (!el || el.querySelector('canvas') || el.querySelector('img')) return;
+    el.innerHTML = '';
+    try {
+        new QRCode(el, {
+            text: JSON.stringify({ id: member.id, name: member.name, email: member.email }),
+            width: size,
+            height: size,
+            colorDark: '#1e293b',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+        });
+    } catch(err) {
+        el.innerHTML = '<p style="color:var(--text-lighter);font-size:12px">QR unavailable</p>';
+    }
+}
+
+function showQR(id) {
+    var members = load('lib_members');
+    var txns = load('lib_txns');
+    var books = load('lib_books');
+    var member = findById(members, id);
+    if (!member) return;
+
+    var active = txns.filter(function(t) { return t.memberId === id && t.status === 'issued'; });
+
+    var booksHtml = '';
+    if (active.length > 0) {
+        booksHtml = '<div style="text-align:left;margin-top:20px"><h4 style="margin-bottom:8px">Borrowed Books:</h4>';
+        for (var i = 0; i < active.length; i++) {
+            var bk = findById(books, active[i].bookId);
+            booksHtml += '<div class="feed-item"><div class="fi-icon" style="background:var(--accent-soft)">📖</div>' +
+                '<div class="fi-text"><p><strong>' + (bk ? bk.title : '?') + '</strong></p>' +
+                '<span>Due: ' + active[i].dueDate + '</span></div></div>';
+        }
+        booksHtml += '</div>';
+    }
+
+    document.getElementById('qrViewBody').innerHTML =
+        '<h2 style="margin-bottom:3px">' + member.name + '</h2>' +
+        '<p style="color:var(--text-light);margin-bottom:3px">' + member.email + ' · ' + member.phone + '</p>' +
+        '<p style="color:var(--primary);font-weight:700;font-size:17px;margin-bottom:16px">' + member.id + ' · ' + member.role + '</p>' +
+        '<div class="qr-box" id="modal-qr-' + member.id + '" style="display:inline-block"></div>' +
+        '<p style="color:var(--text-lighter);font-size:12px;margin-top:10px">Scan at the library counter</p>' +
+        booksHtml +
+        '<button class="btn btn-rose btn-full" style="margin-top:16px" onclick="printCard(\'' + member.id + '\')">Print Card</button>';
+
+    openModal('qrViewModal');
+
+    setTimeout(function() {
+        generateQR('modal-qr-' + member.id, member, 180);
+    }, 150);
+}
+
+function printCard(id) {
+    var members = load('lib_members');
+    var member = findById(members, id);
+    if (!member) return;
+
+    var w = window.open('', '_blank');
+    var qrData = JSON.stringify({ id: member.id, name: member.name });
+
+    w.document.write('<!DOCTYPE html><html><head><title>Library Card</title>' +
+        '<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"><\/script>' +
+        '<style>body{font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f5f5f5}' +
+        '.card{background:white;border:2px solid #4f46e5;border-radius:16px;padding:30px;text-align:center;width:320px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}' +
+        '.card .lib{font-size:22px;font-weight:800;color:#4f46e5;margin-bottom:16px}' +
+        '.card .nm{font-size:18px;font-weight:700;margin-bottom:4px}' +
+        '.card .meta{font-size:12px;color:#64748b;margin-bottom:16px}' +
+        '.qr{display:inline-block;padding:10px;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:12px}' +
+        '.ft{font-size:10px;color:#94a3b8;margin-top:12px}</style></head>' +
+        '<body><div class="card"><div class="lib">📚 LibraryMS</div>' +
+        '<div class="nm">' + member.name + '</div>' +
+        '<div class="meta">' + member.id + ' · ' + member.role + ' · ' + member.email + '</div>' +
+        '<div class="qr" id="pqr"></div>' +
+        '<div class="ft">Library Management System · Member Card</div></div>' +
+        '<script>new QRCode(document.getElementById("pqr"),{text:\'' + qrData.replace(/'/g, "\\'") + '\',width:160,height:160,colorDark:"#1e293b",colorLight:"#fff"});' +
+        'setTimeout(function(){window.print()},600)<\/script></body></html>');
+}
+
+
+// ============ issue book ============
+function setupIssueForm() {
+    var books = load('lib_books');
+    var sel = document.getElementById('issueBookSel');
+    sel.innerHTML = '<option value="">Pick a book...</option>';
+    for (var i = 0; i < books.length; i++) {
+        if (books[i].avail > 0) {
+            sel.innerHTML += '<option value="' + books[i].id + '">' + books[i].title + ' (' + books[i].avail + ' left)</option>';
+        }
+    }
+
+    var now = new Date();
+    document.getElementById('issueDate').value = now.toISOString().split('T')[0];
+    var due = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+    document.getElementById('issueDue').value = due.toISOString().split('T')[0];
+}
+
+function doIssue(e) {
+    e.preventDefault();
+
+    var memberId = document.getElementById('issueMember').value.trim().toUpperCase();
+    var bookId = document.getElementById('issueBookSel').value;
+    var issueDate = document.getElementById('issueDate').value;
+    var dueDate = document.getElementById('issueDue').value;
+
+    var members = load('lib_members');
+    var books = load('lib_books');
+    var txns = load('lib_txns');
+
+    var member = findById(members, memberId);
+    if (!member) { notify('Member ID not found.', 'err'); return; }
+
+    var bookIdx = -1;
+    for (var i = 0; i < books.length; i++) {
+        if (books[i].id === bookId) { bookIdx = i; break; }
+    }
+    if (bookIdx < 0 || books[bookIdx].avail <= 0) { notify('Book not available.', 'err'); return; }
+
+    // don't allow same book to same person twice
+    for (var i = 0; i < txns.length; i++) {
+        if (txns[i].bookId === bookId && txns[i].memberId === memberId && txns[i].status === 'issued') {
+            notify('This member already has this book!', 'warn');
+            return;
+        }
+    }
+
+    txns.push({
+        id: 'TXN' + Date.now().toString(36).toUpperCase(),
+        bookId: bookId,
+        memberId: memberId,
+        issueDate: issueDate,
+        dueDate: dueDate,
+        returnDate: null,
+        status: 'issued'
+    });
+
+    books[bookIdx].avail--;
+
+    save('lib_txns', txns);
+    save('lib_books', books);
+
+    document.getElementById('issueMember').value = '';
+    setupIssueForm();
+    refreshCounts();
+    notify('"' + books[bookIdx].title + '" issued to ' + member.name + '!', 'ok');
+}
+
+
+// ============ return book ============
+function setupReturnForm() {
+    var txns = load('lib_txns');
+    var books = load('lib_books');
+    var members = load('lib_members');
+    var sel = document.getElementById('returnSel');
+
+    var active = txns.filter(function(t) { return t.status === 'issued'; });
+
+    sel.innerHTML = '<option value="">Pick a record...</option>';
+    for (var i = 0; i < active.length; i++) {
+        var bk = findById(books, active[i].bookId);
+        var mem = findById(members, active[i].memberId);
+        sel.innerHTML += '<option value="' + active[i].id + '">' +
+            (bk ? bk.title : '?') + ' → ' + (mem ? mem.name : '?') + ' (Due: ' + active[i].dueDate + ')</option>';
+    }
+
+    document.getElementById('returnDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('returnPreview').style.display = 'none';
+
+    sel.onchange = function() {
+        var preview = document.getElementById('returnPreview');
+        if (!sel.value) { preview.style.display = 'none'; return; }
+
+        var txn = findById(active, sel.value);
+        if (!txn) return;
+        var bk = findById(books, txn.bookId);
+        var mem = findById(members, txn.memberId);
+        var overdue = new Date(txn.dueDate) < new Date();
+
+        preview.style.display = 'block';
+        preview.innerHTML = '<div class="card" style="box-shadow:none;background:var(--bg)"><div class="card-body">' +
+            '<div class="detail-line"><span>Book</span><span><strong>' + (bk ? bk.title : '?') + '</strong></span></div>' +
+            '<div class="detail-line"><span>Member</span><span>' + (mem ? mem.name + ' (' + mem.id + ')' : '?') + '</span></div>' +
+            '<div class="detail-line"><span>Issued</span><span>' + txn.issueDate + '</span></div>' +
+            '<div class="detail-line"><span>Due</span><span>' + txn.dueDate + '</span></div>' +
+            (overdue ? '<div class="detail-line"><span>Status</span><span class="badge badge-red">OVERDUE</span></div>' : '') +
+            '</div></div>';
+    };
+}
+
+function doReturn(e) {
+    e.preventDefault();
+    var txnId = document.getElementById('returnSel').value;
+    var returnDate = document.getElementById('returnDate').value;
+
+    if (!txnId) { notify('Please select a record.', 'err'); return; }
+
+    var txns = load('lib_txns');
+    var books = load('lib_books');
+    var members = load('lib_members');
+
+    var txnIdx = -1;
+    for (var i = 0; i < txns.length; i++) {
+        if (txns[i].id === txnId) { txnIdx = i; break; }
+    }
+    if (txnIdx < 0) return;
+
+    var bookIdx = -1;
+    for (var i = 0; i < books.length; i++) {
+        if (books[i].id === txns[txnIdx].bookId) { bookIdx = i; break; }
+    }
+
+    var mem = findById(members, txns[txnIdx].memberId);
+
+    txns[txnIdx].returnDate = returnDate;
+    txns[txnIdx].status = 'returned';
+    if (bookIdx >= 0) books[bookIdx].avail++;
+
+    save('lib_txns', txns);
+    save('lib_books', books);
+
+    setupReturnForm();
+    refreshCounts();
+    notify('"' + (bookIdx >= 0 ? books[bookIdx].title : '?') + '" returned by ' + (mem ? mem.name : '?') + '!', 'ok');
+}
+
+
+// ============ issued records ============
+function renderRecords() {
+    var txns = load('lib_txns');
+    var books = load('lib_books');
+    var members = load('lib_members');
+    var query = (document.getElementById('recordSearch').value || '').toLowerCase();
+    var filter = document.getElementById('recordFilter').value;
+    var tbody = document.getElementById('recordsTbody');
+
+    var list = txns.slice();
+
+    // apply filter
+    if (filter === 'issued') list = list.filter(function(t) { return t.status === 'issued'; });
+    else if (filter === 'returned') list = list.filter(function(t) { return t.status === 'returned'; });
+    else if (filter === 'overdue') list = list.filter(function(t) { return t.status === 'issued' && new Date(t.dueDate) < new Date(); });
+
+    // apply search
+    if (query) {
+        list = list.filter(function(t) {
+            var bk = findById(books, t.bookId);
+            var mem = findById(members, t.memberId);
+            return (bk && bk.title.toLowerCase().indexOf(query) > -1) ||
+                   (mem && mem.name.toLowerCase().indexOf(query) > -1) ||
+                   t.id.toLowerCase().indexOf(query) > -1;
+        });
+    }
+
+    list.reverse();
+
+    if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7"><div class="empty-box"><h4>No records found</h4></div></td></tr>';
+        return;
+    }
+
+    var html = '';
+    for (var i = 0; i < list.length; i++) {
+        var t = list[i];
+        var bk = findById(books, t.bookId);
+        var mem = findById(members, t.memberId);
+        var overdue = t.status === 'issued' && new Date(t.dueDate) < new Date();
+
+        var badgeClass = 'badge-rose';
+        var statusText = 'Issued';
+        if (t.status === 'returned') { badgeClass = 'badge-teal'; statusText = 'Returned'; }
+        else if (overdue) { badgeClass = 'badge-red'; statusText = 'Overdue'; }
+
+        html += '<tr><td><strong>' + t.id + '</strong></td>' +
+            '<td>' + (bk ? bk.title : '?') + '</td>' +
+            '<td>' + (mem ? mem.name : '?') + '<br><small style="color:var(--text-lighter)">' + (mem ? mem.id + ' · ' + mem.role : '') + '</small></td>' +
+            '<td>' + t.issueDate + '</td>' +
+            '<td>' + t.dueDate + '</td>' +
+            '<td>' + (t.returnDate || '—') + '</td>' +
+            '<td><span class="badge ' + badgeClass + '">' + statusText + '</span></td></tr>';
+    }
+    tbody.innerHTML = html;
+}
+
+
+// ============ student: my books ============
+function renderMyBooks() {
+    var me = getMyMember();
+    var tbody = document.getElementById('myBooksTbody');
+
+    if (!me) {
+        tbody.innerHTML = '<tr><td colspan="5"><div class="empty-box"><div class="emoji">😕</div>' +
+            '<h4>No profile found</h4><p>Ask a librarian to register you as a member.</p></div></td></tr>';
+        return;
+    }
+
+    var txns = load('lib_txns');
+    var books = load('lib_books');
+    var mine = txns.filter(function(t) { return t.memberId === me.id && t.status === 'issued'; });
+
+    if (mine.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5"><div class="empty-box"><div class="emoji">📚</div>' +
+            '<h4>No books checked out</h4><p>Visit the library to borrow something!</p></div></td></tr>';
+        return;
+    }
+
+    var html = '';
+    for (var i = 0; i < mine.length; i++) {
+        var bk = findById(books, mine[i].bookId);
+        var overdue = new Date(mine[i].dueDate) < new Date();
+        html += '<tr><td><strong>' + (bk ? bk.title : '?') + '</strong></td>' +
+            '<td>' + (bk ? bk.author : '?') + '</td>' +
+            '<td>' + mine[i].issueDate + '</td>' +
+            '<td>' + mine[i].dueDate + '</td>' +
+            '<td><span class="badge ' + (overdue ? 'badge-red' : 'badge-rose') + '">' +
+            (overdue ? 'Overdue!' : 'Active') + '</span></td></tr>';
+    }
+    tbody.innerHTML = html;
+}
+
+
+// ============ student: my card ============
+function renderMyCard() {
+    var me = getMyMember();
+    var container = document.getElementById('myCardContainer');
+
+    if (!me) {
+        container.innerHTML = '<div class="empty-box"><div class="emoji">🎫</div>' +
+            '<h4>No library card</h4><p>You need to be registered as a member first.</p></div>';
+        return;
+    }
+
+    var txns = load('lib_txns');
+    var books = load('lib_books');
+    var myActive = txns.filter(function(t) { return t.memberId === me.id && t.status === 'issued'; });
+
+    var listHtml = '';
+    if (myActive.length > 0) {
+        listHtml = '<div style="text-align:left;margin-top:22px"><h4 style="margin-bottom:8px">My Current Books (' + myActive.length + '):</h4>';
+        for (var i = 0; i < myActive.length; i++) {
+            var bk = findById(books, myActive[i].bookId);
+            listHtml += '<div class="feed-item"><div class="fi-icon" style="background:var(--accent-soft)">📖</div>' +
+                '<div class="fi-text"><p><strong>' + (bk ? bk.title : '?') + '</strong></p>' +
+                '<span>Due: ' + myActive[i].dueDate + '</span></div></div>';
+        }
+        listHtml += '</div>';
+    }
+
+    container.innerHTML = '<div style="margin-bottom:16px">' +
+        '<h2 style="margin-bottom:3px">' + me.name + '</h2>' +
+        '<p style="color:var(--text-light)">' + me.email + ' · ' + me.phone + '</p>' +
+        '<p style="color:var(--primary);font-weight:700;font-size:18px;margin-top:5px">' + me.id + '</p>' +
+        '<span class="badge badge-teal" style="margin-top:6px;display:inline-block">' + me.role + '</span>' +
+        '</div>' +
+        '<div class="qr-box" id="mycard-qr" style="display:inline-block"></div>' +
+        '<p style="color:var(--text-lighter);font-size:12px;margin-top:10px">Show this at the library counter to borrow books</p>' +
+        listHtml +
+        '<button class="btn btn-rose" onclick="printCard(\'' + me.id + '\')" style="margin-top:18px;width:100%;max-width:300px">Print My Card</button>';
+
+    setTimeout(function() {
+        generateQR('mycard-qr', me, 200);
+    }, 150);
+}
+
+
+// ============ utility ============
+function findById(arr, id) {
+    for (var i = 0; i < arr.length; i++) {
+        if (arr[i].id === id) return arr[i];
+    }
+    return null;
+}
+
+function todayStr() {
+    return new Date().toISOString().split('T')[0];
+}
+
+
+// ============ boot up ============
+document.addEventListener('DOMContentLoaded', function() {
+    // make sure our storage keys exist
+    var keys = ['lib_books', 'lib_members', 'lib_txns', 'lib_users'];
+    for (var i = 0; i < keys.length; i++) {
+        if (!localStorage.getItem(keys[i])) save(keys[i], []);
+    }
+
+    // restore session if they were already logged in
+    var session = localStorage.getItem('lib_session');
+    if (session) {
+        try {
+            launchApp(JSON.parse(session));
+        } catch(e) {
+            localStorage.removeItem('lib_session');
+        }
+    }
+});
+</script>
+</body>
+</html>
